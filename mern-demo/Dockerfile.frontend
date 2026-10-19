@@ -1,0 +1,14 @@
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY client/package*.json ./client/
+
+RUN cd client && npm ci
+
+COPY client ./client
+
+EXPOSE 5173
+
+CMD ["npm", "--prefix", "client", "run", "dev", "--", "--host", "0.0.0.0"]

@@ -54,14 +54,29 @@ app.put("/api/students/:id", async (req, res) => {
     }
 });
 
+// Câu 39: Xóa sinh viên
+app.delete("/api/students/:id", async (req, res) => {
+  try {
+    const deleted = await Student.findByIdAndDelete(req.params.id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Không tìm thấy sinh viên" });
+    }
+
+    res.json({ message: "Đã xóa sinh viên", student: deleted });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 async function startServer() {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log("MongoDB connected successfully");
 
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
+  app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server is running on port ${PORT}`);
+});
   } catch (error) {
     console.error("MongoDB connection error:", error.message);
   }
