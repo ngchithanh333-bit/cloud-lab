@@ -1,84 +1,98 @@
-
-require("dotenv").config();
+const path = require("node:path");
+require("dotenv").config({ path: path.join(__dirname, "../.env") });
 const dns = require("node:dns");
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
-const Student = require("./models/Student");
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const Student = require("./models/Student");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
 app.use(cors());
 app.use(express.json());
-// Câu 36: Lấy danh sách sinh viên
+
+app.get("/", (req, res) => res.send("MERN Demo API is running!"));
+app.get("/api/hello", (req, res) => {
+  res.json({ message: "MERN Demo API is running!" });
+});
+
+function studentInput(req, res, next) {
+  const { studentId, name, email } = req.body || {};
+  if (![studentId, name, email].every((v) => typeof v === "string" && v.trim())) {
+    return res.status(400).json({ message: "Vui lòng nhập MSSV, họ tên và email." });
+  }
+  req.studentInput = { studentId: studentId.trim(), name: name.trim(), email: email.trim() };
+  next();
+}
+
+function validId(req, res, next) {
+  if (!mongoose.isObjectIdOrHexString(req.params.id)) {
+    return res.status(400).json({ message: "ID sinh viên không hợp lệ." });
+  }
+  next();
+}
+
+function handleError(res, error) {
+  if (error.code === 11000) {
+    return res.status(409).json({ message: "MSSV đã tồn tại." });
+  }
+  if (error.name === "ValidationError") {
+    return res.status(400).json({ message: Object.values(error.errors).map((e) => e.message).join("; ") });
+  }
+  console.error(error.name);
+  return res.status(500).json({ message: "Không xử lý được yêu cầu. Vui lòng thử lại." });
+}
+
 app.get("/api/students", async (req, res) => {
-    try {
-        const students = await Student.find();
-        res.json(students);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-})
-app.get("/", (req, res) => {
-  res.send("MERN Demo API is running!");
-});
-
- // Câu 37: Thêm sinh viên
-app.post("/api/students", async (req, res) => {
-    try {
-        const student = await Student.create(req.body);
-        res.status(201).json(student);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
-});
-
-// Câu 38: Cập nhật sinh viên
-app.put("/api/students/:id", async (req, res) => {
-    try {
-        const student = await Student.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true, runValidators: true }
-        );
-
-        if (!student) {
-            return res.status(404).json({ message: "Không tìm thấy sinh viên" });
-        }
-
-        res.json(student);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
-});
-
-// Câu 39: Xóa sinh viên
-app.delete("/api/students/:id", async (req, res) => {
   try {
-    const deleted = await Student.findByIdAndDelete(req.params.id);
+    res.json(await Student.find());
+  } catch (error) {
+    handleError(res, error);
+  }
+});
 
-    if (!deleted) {
-      return res.status(404).json({ message: "Không tìm thấy sinh viên" });
-    }
+app.post("/api/students", studentInput, async (req, res) => {
+  try {
+    res.status(201).json(await Student.create(req.studentInput));
+  } catch (error) {
+    handleError(res, error);
+  }
+});
 
-    res.json({ message: "Đã xóa sinh viên", student: deleted });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+app.put("/api/students/:id", validId, studentInput, async (req, res) => {
+  try {
+    const student = await Student.findByIdAndUpdate(req.params.id, req.studentInput, {
+      new: true, runValidators: true,
+    });
+    if (!student) return res.status(404).json({ message: "Không tìm thấy sinh viên." });
+    res.json(student);
+  } catch (error) {
+    handleError(res, error);
+  }
+});
+
+app.delete("/api/students/:id", validId, async (req, res) => {
+  try {
+    const student = await Student.findByIdAndDelete(req.params.id);
+    if (!student) return res.status(404).json({ message: "Không tìm thấy sinh viên." });
+    res.json({ message: "Đã xóa sinh viên.", student });
+  } catch (error) {
+    handleError(res, error);
   }
 });
 
 async function startServer() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log("MongoDB connected successfully");
-
-  app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+    if (!process.env.MONGODB_URI) throw new Error("Thiếu MONGODB_URI trong mern-demo/.env");
+    await mongoose.connect(process.env.MONGODB_URI, { dbName: "cloud_lab" });
+    await Student.init();
+    console.log("MongoDB connected successfully (cloud_lab)");
+    app.listen(PORT, "0.0.0.0", () => console.log(`Server is running on port ${PORT}`));
   } catch (error) {
-    console.error("MongoDB connection error:", error.message);
+    console.error("Không khởi động được backend:", error.name);
+    await mongoose.disconnect();
+    process.exitCode = 1;
   }
 }
 
