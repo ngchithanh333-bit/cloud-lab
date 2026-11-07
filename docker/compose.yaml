@@ -1,21 +1,2 @@
-services:
-  backend:
-    build:
-      context: ../mern-demo
-      dockerfile: Dockerfile.backend
-    ports:
-      - "5000:5000"
-    env_file:
-      - ../mern-demo/.env
-    restart: unless-stopped
-  frontend:
-    build:
-      context: ../mern-demo
-      dockerfile: Dockerfile.frontend
-    ports:
-      - "5173:5173"
-    environment:
-      API_PROXY_TARGET: http://backend:5000
-    depends_on:
-      - backend
-    restart: unless-stopped
+include:
+  - ../docker-compose.yml

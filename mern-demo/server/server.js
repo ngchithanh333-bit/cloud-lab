@@ -11,6 +11,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
+app.use((req, res, next) => {
+  res.on("finish", () => console.log(req.method, req.path, res.statusCode));
+  next();
+});
 
 app.get("/", (req, res) => res.send("MERN Demo API is running!"));
 app.get("/api/hello", (req, res) => {
