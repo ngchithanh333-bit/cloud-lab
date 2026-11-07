@@ -93,6 +93,7 @@ function App() {
   return (
     <main className="student-app">
       <h1>Quản lý sinh viên</h1>
+      <p aria-label="Phiên bản ứng dụng">Phiên bản 2.0</p>
       <h2>{editingId ? "Chỉnh sửa sinh viên" : "Thêm sinh viên"}</h2>
       <form onSubmit={handleSubmit}>
         <fieldset disabled={busy || loading}>

@@ -1,0 +1,16 @@
+{
+  "name": "Cloud Lab MERN",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [
+    5173
+  ],
+  "portsAttributes": {
+    "5173": {
+      "label": "MERN Frontend",
+      "onAutoForward": "openBrowser"
+    }
+  }
+}
