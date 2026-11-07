@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: cloud-lab-mern
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    dockerfilePath: ./mern-demo/Dockerfile.render
+    dockerContext: ./mern-demo
+    healthCheckPath: /api/hello
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SERVE_CLIENT
+        value: "true"
+      - key: PORT
+        value: "10000"
+      - key: MONGODB_URI
+        sync: false

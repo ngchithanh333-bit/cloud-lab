@@ -16,7 +16,9 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/", (req, res) => res.send("MERN Demo API is running!"));
+if (process.env.SERVE_CLIENT !== "true") {
+  app.get("/", (req, res) => res.send("MERN Demo API is running!"));
+}
 app.get("/api/hello", (req, res) => {
   res.json({ message: "MERN Demo API is running!" });
 });
@@ -85,6 +87,20 @@ app.delete("/api/students/:id", validId, async (req, res) => {
     handleError(res, error);
   }
 });
+
+
+app.use("/api", (req, res) => {
+  res.status(404).json({ message: "API không tồn tại." });
+});
+
+// Render can serve the built React application and API from one web service.
+if (process.env.SERVE_CLIENT === "true") {
+  const clientDist = path.join(__dirname, "../client/dist");
+  app.use(express.static(clientDist));
+  app.get("/{*page}", (req, res) => {
+    res.sendFile(path.join(clientDist, "index.html"));
+  });
+}
 
 async function startServer() {
   try {
